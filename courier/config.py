@@ -29,6 +29,8 @@ class Config:
         # `override=False` means real shell exports take precedence over .env.
         load_dotenv(override=False)
         gp = os.environ.get("GOOGLE_CREDENTIALS_PATH")
+        _bundled = Path(__file__).parent / "credentials.json"
+        resolved_creds = Path(gp) if gp else (_bundled if _bundled.exists() else None)
         defaults = dict(
             mode=Mode(os.environ.get("BRACE_MODE", "dry-run")),
             limit=int(os.environ.get("BRACE_LIMIT", "10")),
@@ -39,7 +41,7 @@ class Config:
             anthropic_api_key=os.environ.get("ANTHROPIC_API_KEY") or None,
             openai_api_key=os.environ.get("OPENAI_API_KEY") or None,
             xai_api_key=os.environ.get("XAI_API_KEY") or None,
-            google_credentials_path=Path(gp) if gp else None,
+            google_credentials_path=resolved_creds,
             log_level=os.environ.get("BRACE_LOG_LEVEL", "INFO"),
         )
         defaults.update(overrides)

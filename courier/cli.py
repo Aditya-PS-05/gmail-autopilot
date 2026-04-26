@@ -31,7 +31,7 @@ from .models import Mode
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        prog="gmail-autopilot",
+        prog="courier",
         description="Run the AutoPilot inbox workflow. Produces drafts; never sends.",
     )
     parser.add_argument(

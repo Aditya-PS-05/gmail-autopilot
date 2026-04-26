@@ -1,6 +1,6 @@
-from gmail_autopilot.api import run_autopilot
-from gmail_autopilot.config import Config
-from gmail_autopilot.models import Mode
+from courier.api import run_autopilot
+from courier.config import Config
+from courier.models import Mode
 
 
 def test_rerun_does_not_duplicate_drafts(tmp_db, mock_gmail, fake_llm, null_memory):

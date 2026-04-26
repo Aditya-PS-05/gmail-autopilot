@@ -134,7 +134,7 @@ def _edit_in_editor(initial_text: str, *, suffix: str = ".txt") -> str | None:
     if not editor:
         return None
 
-    fd, path_str = tempfile.mkstemp(suffix=suffix, prefix="gmail-autopilot-")
+    fd, path_str = tempfile.mkstemp(suffix=suffix, prefix="courier-")
     path = Path(path_str)
     try:
         with os.fdopen(fd, "w") as f:

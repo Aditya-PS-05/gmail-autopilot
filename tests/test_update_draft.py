@@ -2,8 +2,8 @@
 
 import pytest
 
-from gmail_autopilot.adapters.gmail_mock import MockGmailClient
-from gmail_autopilot.errors import PermanentError
+from courier.adapters.gmail_mock import MockGmailClient
+from courier.errors import PermanentError
 
 
 def test_update_draft_replaces_body_in_place():

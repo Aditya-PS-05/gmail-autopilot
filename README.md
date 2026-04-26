@@ -1,7 +1,7 @@
 <!-- <CENTERED SECTION FOR GITHUB DISPLAY> -->
 
 <div align="center">
-<h1>gmail-autopilot</h1>
+<h1>courier</h1>
 </div>
 
 > Gmail workflow runner that fetches recent emails, scores each for reply-worthiness, generates drafts, and creates them safely — one clear boundary at a time.
@@ -19,19 +19,19 @@
 [![Python](https://img.shields.io/badge/python-3.11+-0073FF?labelColor=black&logo=python&logoColor=white&style=flat-square)](https://www.python.org/)
 [![Tests](https://img.shields.io/badge/tests-18%20passing-0073FF?labelColor=black&style=flat-square)](./tests/)
 [![Ruff](https://img.shields.io/badge/lint-ruff-0073FF?labelColor=black&style=flat-square)](https://docs.astral.sh/ruff/)
-[![GitHub Stars](https://img.shields.io/github/stars/Aditya-PS-05/gmail-autopilot?color=0073FF&labelColor=black&style=flat-square)](https://github.com/Aditya-PS-05/gmail-autopilot/stargazers)
-[![GitHub Issues](https://img.shields.io/github/issues/Aditya-PS-05/gmail-autopilot?color=0073FF&labelColor=black&style=flat-square)](https://github.com/Aditya-PS-05/gmail-autopilot/issues)
+[![GitHub Stars](https://img.shields.io/github/stars/Aditya-PS-05/courier?color=0073FF&labelColor=black&style=flat-square)](https://github.com/Aditya-PS-05/courier/stargazers)
+[![GitHub Issues](https://img.shields.io/github/issues/Aditya-PS-05/courier?color=0073FF&labelColor=black&style=flat-square)](https://github.com/Aditya-PS-05/courier/issues)
 [![License](https://img.shields.io/badge/license-MIT-white?labelColor=black&style=flat-square)](./LICENSE)
 
 </div>
 
 <!-- </CENTERED SECTION FOR GITHUB DISPLAY> -->
 
-> **Run [`uv sync && uv run gmail-autopilot --mode dry-run`](#quickstart) and watch the full pipeline run end-to-end with zero credentials — mock Gmail, deterministic LLM, structured output.**
+> **Run [`uv sync && courier --mode dry-run`](#quickstart) and watch the full pipeline run end-to-end with zero credentials — mock Gmail, deterministic LLM, structured output.**
 
 ## Overview
 
-**gmail-autopilot** is a workflow runner designed for a relationship-CRM "AutoPilot" model. Each email gets scored for reply-worthiness, its thread is read, a short draft is generated, and a Gmail draft is created — all through clean, swappable adapter boundaries.
+**courier** is a workflow runner designed for a relationship-CRM "AutoPilot" model. Each email gets scored for reply-worthiness, its thread is read, a short draft is generated, and a Gmail draft is created — all through clean, swappable adapter boundaries.
 
 The workflow never sends. `create_draft` is gated by `--mode real`; in dry-run mode it's skipped with the proposed draft still visible in the output. A rerun on the same inbox produces zero duplicate drafts.
 
@@ -42,9 +42,9 @@ The workflow never sends. `create_draft` is gated by `--mode real`; in dry-run m
 This project uses [uv](https://docs.astral.sh/uv/) for environment management and [ruff](https://docs.astral.sh/ruff/) for lint + format.
 
 ```bash
-uv sync                                           # creates .venv, installs deps
-uv run gmail-autopilot --mode dry-run --limit 6   # mock Gmail + fake LLM
-# or: uv run python -m gmail_autopilot --mode dry-run
+uv sync                                # creates .venv, installs deps
+courier --mode dry-run --limit 6      # mock Gmail + fake LLM
+# or: uv run python -m courier --mode dry-run
 ```
 
 Defaults use `MockGmailClient` and `FakeLLMClient` — no credentials needed. You'll see a rich live feed on stdout if connected to a TTY, or raw JSON if piped.
@@ -58,7 +58,7 @@ uv run ruff format .
 Inspect a previous run after the process exits:
 
 ```bash
-uv run gmail-autopilot --inspect run_abc123def012
+courier --inspect run_abc123def012
 # or query SQLite directly
 sqlite3 runs.db "SELECT id, mode, status, duration_ms FROM workflow_runs ORDER BY started_at DESC LIMIT 5"
 sqlite3 runs.db "SELECT step_name, status, retry_count, duration_ms FROM step_results WHERE workflow_run_id='run_...' ORDER BY id"
@@ -70,16 +70,16 @@ Run with real LLM + real Gmail:
 uv sync --extra anthropic --extra openai --extra google
 
 # Anthropic Claude
-ANTHROPIC_API_KEY=sk-ant-... uv run gmail-autopilot --gmail real --llm anthropic --mode dry-run
+ANTHROPIC_API_KEY=sk-ant-... courier --gmail real --llm anthropic --mode dry-run
 
 # OpenAI GPT
-OPENAI_API_KEY=sk-... uv run gmail-autopilot --gmail real --llm openai --mode dry-run
+OPENAI_API_KEY=sk-... courier --gmail real --llm openai --mode dry-run
 
 # xAI Grok (same OpenAI SDK, different base_url)
-XAI_API_KEY=xai-... uv run gmail-autopilot --gmail real --llm grok --mode dry-run
+XAI_API_KEY=xai-... courier --gmail real --llm grok --mode dry-run
 
 # Auto-route across whichever keys are configured
-uv run gmail-autopilot --gmail real --llm auto --mode dry-run
+courier --gmail real --llm auto --mode dry-run
 ```
 
 Drop `--mode dry-run` to write drafts to Gmail. First run opens a browser for OAuth; the resulting token is cached as `token.json`.
@@ -92,7 +92,7 @@ Every layer boundary is a `Protocol` or a typed Pydantic model — never a concr
 
 ```mermaid
 flowchart TD
-    A([gmail-autopilot CLI]) --> B{stdout TTY?}
+    A([courier CLI]) --> B{stdout TTY?}
     B -- yes --> C[CliUI\nrich live feed + summary]
     B -- "no  |  --json flag" --> D[raw JSON stdout]
 
@@ -217,7 +217,7 @@ Every step writes a row to `step_results` with input hash, duration, retry count
 
 ## Configuration
 
-Audex reads config from environment variables. All have sensible defaults.
+courier reads config from environment variables. All have sensible defaults.
 
 | Variable | Default | Description |
 |---|---|---|
@@ -241,7 +241,7 @@ Place these in a `.env` file at the project root — `python-dotenv` loads it au
 ### CLI flags
 
 ```
-uv run gmail-autopilot [OPTIONS]
+courier [OPTIONS]
 
   --mode dry-run|real     override BRACE_MODE
   --limit N               override BRACE_LIMIT
@@ -311,7 +311,7 @@ uv run gmail-autopilot [OPTIONS]
 - AI wanted to log full email bodies for "easier debugging." Rejected — bodies never enter logs; only IDs, subjects, and counts.
 
 **How I tested generated code**
-- A hand-written end-to-end smoke test (`uv run gmail-autopilot --mode dry-run`) exercises the full pipeline.
+- A hand-written end-to-end smoke test (`courier --mode dry-run`) exercises the full pipeline.
 - 18 pytest tests cover every failure mode using `MockGmailClient.fail_on_next_call(...)` and `FakeLLMClient.fail_on_next_call(...)`. No network, no credentials.
 
 **What I avoided delegating**

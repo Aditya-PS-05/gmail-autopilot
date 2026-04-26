@@ -6,10 +6,10 @@ import pytest
 
 os.environ["BRACE_RETRY_NO_SLEEP"] = "1"
 
-from gmail_autopilot.adapters.gmail_mock import MockGmailClient
-from gmail_autopilot.adapters.llm_fake import FakeLLMClient
-from gmail_autopilot.adapters.memory_null import NullMemoryProvider
-from gmail_autopilot.state.repository import Repository
+from courier.adapters.gmail_mock import MockGmailClient
+from courier.adapters.llm_fake import FakeLLMClient
+from courier.adapters.memory_null import NullMemoryProvider
+from courier.state.repository import Repository
 
 
 @pytest.fixture

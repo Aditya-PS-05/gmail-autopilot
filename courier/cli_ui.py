@@ -55,7 +55,7 @@ class CliUI:
 
     def _render_start(self, ev: RunStarted) -> None:
         self.console.rule(
-            f"[bold]gmail-autopilot[/]  ·  mode=[bold]{ev.mode}[/]  ·  workflow={ev.workflow}",
+            f"[bold]courier[/]  ·  mode=[bold]{ev.mode}[/]  ·  workflow={ev.workflow}",
             characters="─",
         )
         self.console.print(f"[dim]run {ev.run_id}[/]\n")
@@ -121,7 +121,7 @@ class CliUI:
                 "[dim]→ Dry-run: drafts shown above were [bold]not[/] created in Gmail.[/]"
             )
         self.console.print(
-            f"[dim]→ Inspect this run: [bold]gmail-autopilot --inspect {run.id}[/][/]"
+            f"[dim]→ Inspect this run: [bold]courier --inspect {run.id}[/][/]"
         )
 
 

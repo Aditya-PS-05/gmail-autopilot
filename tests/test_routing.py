@@ -2,10 +2,10 @@
 
 import pytest
 
-from gmail_autopilot.adapters.llm_fake import FakeLLMClient
-from gmail_autopilot.adapters.llm_routed import RoutedLLM
-from gmail_autopilot.errors import AuthError, PermanentError, TransientError
-from gmail_autopilot.models import RelationshipSignal
+from courier.adapters.llm_fake import FakeLLMClient
+from courier.adapters.llm_routed import RoutedLLM
+from courier.errors import AuthError, PermanentError, TransientError
+from courier.models import RelationshipSignal
 
 _USER = "email_id: x\nsubject: a question?"
 
