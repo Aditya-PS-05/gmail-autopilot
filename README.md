@@ -37,16 +37,25 @@ sqlite3 runs.db "SELECT id, mode, status, duration_ms FROM workflow_runs ORDER B
 sqlite3 runs.db "SELECT step_name, status, retry_count, duration_ms FROM step_results WHERE workflow_run_id='run_...' ORDER BY id"
 ```
 
-Run with real Anthropic + real Gmail:
+Run with a real LLM + real Gmail:
 
 ```bash
-uv sync --extra anthropic --extra google
-export ANTHROPIC_API_KEY=sk-ant-...
-export GOOGLE_CREDENTIALS_PATH=./credentials.json    # OAuth client_secrets.json from Google Cloud Console
-uv run gmail-autopilot --gmail real --llm anthropic --mode dry-run
+# Pick one or more LLM extras (you can install all three at once)
+uv sync --extra anthropic --extra openai --extra google
+
+# Anthropic Claude
+ANTHROPIC_API_KEY=sk-ant-... uv run gmail-autopilot --gmail real --llm anthropic --mode dry-run
+
+# OpenAI GPT
+OPENAI_API_KEY=sk-... uv run gmail-autopilot --gmail real --llm openai --mode dry-run
+
+# xAI Grok (uses the openai SDK with xAI's compatible endpoint)
+XAI_API_KEY=xai-... uv run gmail-autopilot --gmail real --llm grok --mode dry-run
 ```
 
-(First run opens a browser for OAuth; the resulting token is cached as `token.json`.)
+Drop the `--mode dry-run` to actually create drafts in your Gmail Drafts folder. First run opens a browser for OAuth; the resulting token is cached as `token.json`.
+
+The `LLMClient` interface takes a `model_hint` (`"fast"` / `"smart"` / `"cheap"`) so each adapter picks an appropriate model: `gpt-4o-mini` vs `gpt-4o` for OpenAI, `grok-3-mini` vs `grok-3` for Grok, `claude-haiku-4-5` vs `claude-sonnet-4-6` for Anthropic. The signal-scoring step uses `fast`; draft generation uses `smart`.
 
 ---
 
@@ -79,8 +88,8 @@ Six layers, each replaceable. The boundary between layers is a `Protocol` or a t
 ├─────────────────────────────────────────────────┤
 │ Adapters (adapters/)                            │
 │   GmailClient: Mock | Real                      │
-│   LLMClient:   Fake | Anthropic                 │
-│                (Gemini/OpenAI extensible)       │
+│   LLMClient:   Fake | Anthropic | OpenAI | Grok │
+│                (Gemini extensible)              │
 │   MemoryProvider: Null | (brace plug-in)        │
 └─────────────────────────────────────────────────┘
 ```

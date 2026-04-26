@@ -32,7 +32,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--gmail", choices=["mock", "real"], default=None)
-    parser.add_argument("--llm", choices=["fake", "anthropic"], default=None)
+    parser.add_argument(
+        "--llm",
+        choices=["fake", "anthropic", "openai", "grok", "auto"],
+        default=None,
+        help="auto: route per-task across whichever provider keys are configured",
+    )
     parser.add_argument("--db", default=None, help="sqlite path (default runs.db)")
     parser.add_argument(
         "--inspect",

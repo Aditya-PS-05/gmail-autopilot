@@ -15,6 +15,7 @@ dependencies = [
 # Optional integrations: only installed with `uv sync --extra <name>`
 [project.optional-dependencies]
 anthropic = ["anthropic>=0.40"]
+openai = ["openai>=1.50"]      # also satisfies Grok (xAI is OpenAI-compatible)
 google = [
     "google-api-python-client>=2.130",
     "google-auth-oauthlib>=1.2",

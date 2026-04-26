@@ -5,6 +5,8 @@ their own gmail / llm / memory provider without changing the engine."""
 
 from __future__ import annotations
 
+import os
+
 from .adapters.gmail_base import GmailClient
 from .adapters.gmail_mock import MockGmailClient
 from .adapters.llm_base import LLMClient
@@ -17,6 +19,15 @@ from .models import AutoPilotRun
 from .reliability.logger import configure_logging
 from .state.repository import Repository
 from .workflows.autopilot_inbox import WORKFLOW_NAME, per_email_steps, seed_step
+
+# Default per-hint provider rankings used by the `auto` backend. Justified in
+# the README. Override per hint via BRACE_LLM_PREFERENCE_FAST / _SMART / _CHEAP
+# (comma-separated provider names: anthropic, openai, grok).
+_AUTO_DEFAULTS: dict[str, list[str]] = {
+    "fast": ["openai", "grok", "anthropic"],
+    "smart": ["anthropic", "openai", "grok"],
+    "cheap": ["grok", "openai", "anthropic"],
+}
 
 
 def _build_gmail(config: Config) -> GmailClient:
@@ -40,7 +51,59 @@ def _build_llm(config: Config) -> LLMClient:
         if not config.anthropic_api_key:
             raise RuntimeError("ANTHROPIC_API_KEY required for anthropic backend")
         return AnthropicLLM(config.anthropic_api_key)
+    if config.llm_backend == "openai":
+        from .adapters.llm_openai import OpenAILLM
+
+        if not config.openai_api_key:
+            raise RuntimeError("OPENAI_API_KEY required for openai backend")
+        return OpenAILLM(config.openai_api_key)
+    if config.llm_backend == "grok":
+        from .adapters.llm_grok import GrokLLM
+
+        if not config.xai_api_key:
+            raise RuntimeError("XAI_API_KEY required for grok backend")
+        return GrokLLM(config.xai_api_key)
+    if config.llm_backend == "auto":
+        return _build_auto_llm(config)
     raise ValueError(f"unknown llm backend: {config.llm_backend}")
+
+
+def _build_auto_llm(config: Config) -> LLMClient:
+    """Routes calls to the best provider per task using model_hint.
+
+    Builds a RoutedLLM across whichever provider keys are configured.
+    Per-hint provider order is overrideable via env vars (see _AUTO_DEFAULTS)."""
+    available: dict[str, LLMClient] = {}
+    if config.anthropic_api_key:
+        from .adapters.llm_anthropic import AnthropicLLM
+        available["anthropic"] = AnthropicLLM(config.anthropic_api_key)
+    if config.openai_api_key:
+        from .adapters.llm_openai import OpenAILLM
+        available["openai"] = OpenAILLM(config.openai_api_key)
+    if config.xai_api_key:
+        from .adapters.llm_grok import GrokLLM
+        available["grok"] = GrokLLM(config.xai_api_key)
+
+    if not available:
+        raise RuntimeError(
+            "BRACE_LLM_BACKEND=auto requires at least one of: "
+            "ANTHROPIC_API_KEY, OPENAI_API_KEY, XAI_API_KEY"
+        )
+
+    routes: dict[str, list[tuple[str, LLMClient]]] = {}
+    for hint, default_order in _AUTO_DEFAULTS.items():
+        env_override = os.environ.get(f"BRACE_LLM_PREFERENCE_{hint.upper()}")
+        order = (
+            [p.strip() for p in env_override.split(",") if p.strip()]
+            if env_override else default_order
+        )
+        routes[hint] = [(name, available[name]) for name in order if name in available]
+        if not routes[hint]:
+            # Preference list had no available providers — use any available.
+            routes[hint] = list(available.items())
+
+    from .adapters.llm_routed import RoutedLLM
+    return RoutedLLM(routes)
 
 
 def run_autopilot(
