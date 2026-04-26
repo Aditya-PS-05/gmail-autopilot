@@ -37,6 +37,26 @@ The workflow never sends. `create_draft` is gated by `--mode real`; in dry-run m
 
 ---
 
+## Screenshots
+
+**Live email feed** — per-email progress as the pipeline runs
+
+![Live feed](assets/live-feed.png)
+
+**Run summary + draft review** — structured summary followed by the interactive draft picker
+
+![Run summary](assets/run-summary.png)
+
+**Draft editor** — selected draft opens in `$EDITOR` for editing before pushing back to Gmail
+
+![Draft editor](assets/draft-editor.png)
+
+**Full run overview** — complete output from start to finish
+
+![Full run](assets/full-run.png)
+
+---
+
 ## Quickstart
 
 This project uses [uv](https://docs.astral.sh/uv/) for environment management and [ruff](https://docs.astral.sh/ruff/) for lint + format.
@@ -83,6 +103,75 @@ courier --gmail real --llm auto --mode dry-run
 ```
 
 Drop `--mode dry-run` to write drafts to Gmail. First run opens a browser for OAuth; the resulting token is cached as `token.json`.
+
+---
+
+## Examples
+
+**Try it instantly — no credentials needed**
+```bash
+courier --mode dry-run --limit 5
+```
+Uses mock Gmail and a deterministic fake LLM. Full pipeline runs end-to-end in under a second.
+
+---
+
+**Real Gmail, see what would be drafted (safe — no writes)**
+```bash
+courier --gmail real --llm anthropic --mode dry-run --limit 20
+```
+Fetches your actual inbox, scores each email, generates draft text — but never touches Gmail Drafts.
+
+---
+
+**Real Gmail, write drafts**
+```bash
+courier --gmail real --llm auto --mode real --limit 20
+```
+Runs the full pipeline. Drafts land in your Gmail Drafts folder. OAuth browser window opens on first run.
+
+---
+
+**Review and edit drafts interactively after the run**
+```bash
+courier --gmail real --llm auto --mode real
+# → "Review or edit any drafts? (y/N): y"
+# → pick a number, draft opens in $EDITOR
+# → save → pushed back to Gmail via drafts.update
+```
+
+---
+
+**Quiet mode — summary only, no per-email lines**
+```bash
+courier --gmail real --llm auto --mode real -q
+```
+
+---
+
+**Pipe mode — machine-readable JSON output**
+```bash
+courier --mode dry-run --json | jq '.summary'
+```
+
+---
+
+**Inspect a previous run**
+```bash
+courier --inspect run_2e8aa2194189
+# or query SQLite directly
+sqlite3 runs.db "SELECT step_name, status, duration_ms FROM step_results WHERE workflow_run_id='run_...' ORDER BY id"
+```
+
+---
+
+**Rerun safely — already-drafted threads are skipped**
+```bash
+courier --gmail real --llm auto --mode real
+# second run on same inbox:
+# → "already drafted: 3 skipped"
+# → only new threads get processed
+```
 
 ---
 
