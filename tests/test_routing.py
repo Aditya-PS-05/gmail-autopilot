@@ -68,10 +68,12 @@ def test_routed_uses_separate_routes_per_hint():
     smart_only = FakeLLMClient()
     smart_only.fail_on_next_call("RelationshipSignal", PermanentError("smart broken"))
     fast_only = FakeLLMClient()
-    routed = RoutedLLM({
-        "fast": [("fast_p", fast_only)],
-        "smart": [("smart_p", smart_only)],
-    })
+    routed = RoutedLLM(
+        {
+            "fast": [("fast_p", fast_only)],
+            "smart": [("smart_p", smart_only)],
+        }
+    )
 
     # Smart route has only the failing provider — should raise.
     with pytest.raises(PermanentError):

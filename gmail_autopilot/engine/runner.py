@@ -14,6 +14,7 @@ from __future__ import annotations
 import logging
 import time
 import uuid
+from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any
 
@@ -33,6 +34,7 @@ from ..models import (
 from ..reliability.retry import call_with_retry
 from ..state.repository import Repository
 from ..tools.base import ToolContext
+from .events import EmailCompleted, EmailsFetched, ProgressEvent, RunFinished, RunStarted
 from .step import Step
 
 log = logging.getLogger(__name__)
@@ -62,7 +64,13 @@ class WorkflowRunner:
 
     # ---- public ----
 
-    def run(self, *, limit: int) -> AutoPilotRun:
+    def run(
+        self,
+        *,
+        limit: int,
+        on_progress: Callable[[ProgressEvent], None] | None = None,
+    ) -> AutoPilotRun:
+        notify = on_progress or (lambda _e: None)
         run_id = f"run_{uuid.uuid4().hex[:12]}"
         run = AutoPilotRun(
             id=run_id,
@@ -75,6 +83,7 @@ class WorkflowRunner:
             "workflow_started",
             extra={"workflow_run_id": run_id, "mode": self.mode.value},
         )
+        notify(RunStarted(run_id=run_id, mode=self.mode.value, workflow=self.workflow_name))
         ctx = ToolContext(
             workflow_name=self.workflow_name,
             workflow_run_id=run_id,
@@ -112,15 +121,20 @@ class WorkflowRunner:
             )
             self.repo.finish_run(run)
             log.error("seed_failed: %s", e, extra={"workflow_run_id": run_id})
+            notify(RunFinished(run=run))
             return run
+
+        notify(EmailsFetched(emails=emails))
 
         # 2. Fan out (per-email isolation)
         any_failed = False
-        for email in emails:
+        total = len(emails)
+        for i, email in enumerate(emails, start=1):
             brief = self._process_email(email, ctx)
             run.action_briefs.append(brief)
             if brief.status == "failed":
                 any_failed = True
+            notify(EmailCompleted(brief=brief, index=i, total=total))
 
         # 3. Summarize
         run.finished_at = datetime.now(UTC)
@@ -136,6 +150,7 @@ class WorkflowRunner:
                 "duration_ms": run.duration_ms,
             },
         )
+        notify(RunFinished(run=run))
         return run
 
     # ---- internals ----

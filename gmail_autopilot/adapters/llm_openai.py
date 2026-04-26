@@ -35,13 +35,9 @@ class OpenAILLM:
         try:
             from openai import OpenAI
         except ImportError as e:
-            raise PermanentError(
-                "openai SDK not installed. Run: uv sync --extra openai"
-            ) from e
+            raise PermanentError("openai SDK not installed. Run: uv sync --extra openai") from e
         self._client = (
-            OpenAI(api_key=api_key, base_url=base_url)
-            if base_url
-            else OpenAI(api_key=api_key)
+            OpenAI(api_key=api_key, base_url=base_url) if base_url else OpenAI(api_key=api_key)
         )
         self._model_map = model_map or _OPENAI_MODEL_MAP
 
@@ -98,12 +94,8 @@ class OpenAILLM:
         try:
             data = json.loads(text)
         except json.JSONDecodeError as e:
-            raise ValidationError(
-                f"LLM did not return valid JSON: {e}; text={text[:200]!r}"
-            ) from e
+            raise ValidationError(f"LLM did not return valid JSON: {e}; text={text[:200]!r}") from e
         try:
             return schema.model_validate(data)
         except PydanticValidationError as e:
-            raise ValidationError(
-                f"LLM output did not match schema {schema.__name__}: {e}"
-            ) from e
+            raise ValidationError(f"LLM output did not match schema {schema.__name__}: {e}") from e

@@ -151,6 +151,26 @@ class RealGmailClient:
         except Exception as e:
             raise self._normalize(e) from e
 
+    def update_draft(self, draft_id: str, subject: str, body: str) -> CreatedDraft:
+        try:
+            mime = MIMEText(body)
+            mime["Subject"] = subject
+            raw = base64.urlsafe_b64encode(mime.as_bytes()).decode()
+            updated = (
+                self._service.users()
+                .drafts()
+                .update(
+                    userId="me",
+                    id=draft_id,
+                    body={"message": {"raw": raw}},
+                )
+                .execute()
+            )
+            thread_id = updated.get("message", {}).get("threadId", "")
+            return CreatedDraft(draft_id=draft_id, thread_id=thread_id)
+        except Exception as e:
+            raise self._normalize(e) from e
+
 
 def _parse_contact(s: str) -> Contact:
     s = s.strip()

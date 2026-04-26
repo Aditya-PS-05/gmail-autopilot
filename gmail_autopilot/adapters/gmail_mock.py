@@ -91,5 +91,15 @@ class MockGmailClient:
         }
         return CreatedDraft(draft_id=draft_id, thread_id=thread_id)
 
+    def update_draft(self, draft_id: str, subject: str, body: str) -> CreatedDraft:
+        self._maybe_fail("update_draft")
+        if draft_id not in self._drafts:
+            raise PermanentError(f"draft not found: {draft_id}")
+        existing = self._drafts[draft_id]
+        existing["subject"] = subject
+        existing["body"] = body
+        existing["updated_at"] = datetime.now(UTC).isoformat()
+        return CreatedDraft(draft_id=draft_id, thread_id=existing["thread_id"])
+
     def all_drafts(self) -> dict[str, dict]:
         return dict(self._drafts)

@@ -67,9 +67,7 @@ class RoutedLLM:
                 continue
 
         if transient_errors:
-            raise TransientError(
-                f"all routed providers failed transiently: {transient_errors}"
-            )
+            raise TransientError(f"all routed providers failed transiently: {transient_errors}")
         if last_perm:
             raise last_perm
         raise PermanentError(f"no provider available for hint={model_hint}")

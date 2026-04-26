@@ -6,6 +6,7 @@ their own gmail / llm / memory provider without changing the engine."""
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 
 from .adapters.gmail_base import GmailClient
 from .adapters.gmail_mock import MockGmailClient
@@ -14,6 +15,7 @@ from .adapters.llm_fake import FakeLLMClient
 from .adapters.memory_base import MemoryProvider
 from .adapters.memory_null import NullMemoryProvider
 from .config import Config
+from .engine.events import ProgressEvent
 from .engine.runner import WorkflowRunner
 from .models import AutoPilotRun
 from .reliability.logger import configure_logging
@@ -76,12 +78,15 @@ def _build_auto_llm(config: Config) -> LLMClient:
     available: dict[str, LLMClient] = {}
     if config.anthropic_api_key:
         from .adapters.llm_anthropic import AnthropicLLM
+
         available["anthropic"] = AnthropicLLM(config.anthropic_api_key)
     if config.openai_api_key:
         from .adapters.llm_openai import OpenAILLM
+
         available["openai"] = OpenAILLM(config.openai_api_key)
     if config.xai_api_key:
         from .adapters.llm_grok import GrokLLM
+
         available["grok"] = GrokLLM(config.xai_api_key)
 
     if not available:
@@ -95,7 +100,8 @@ def _build_auto_llm(config: Config) -> LLMClient:
         env_override = os.environ.get(f"BRACE_LLM_PREFERENCE_{hint.upper()}")
         order = (
             [p.strip() for p in env_override.split(",") if p.strip()]
-            if env_override else default_order
+            if env_override
+            else default_order
         )
         routes[hint] = [(name, available[name]) for name in order if name in available]
         if not routes[hint]:
@@ -103,6 +109,7 @@ def _build_auto_llm(config: Config) -> LLMClient:
             routes[hint] = list(available.items())
 
     from .adapters.llm_routed import RoutedLLM
+
     return RoutedLLM(routes)
 
 
@@ -113,6 +120,7 @@ def run_autopilot(
     llm: LLMClient | None = None,
     memory: MemoryProvider | None = None,
     repo: Repository | None = None,
+    on_progress: Callable[[ProgressEvent], None] | None = None,
 ) -> AutoPilotRun:
     config = config or Config.from_env()
     configure_logging(config.log_level)
@@ -136,7 +144,7 @@ def run_autopilot(
             repo=repo,
             mode=config.mode,
         )
-        return runner.run(limit=config.limit)
+        return runner.run(limit=config.limit, on_progress=on_progress)
     finally:
         if owns_repo:
             repo.close()
