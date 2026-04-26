@@ -1,0 +1,66 @@
+{
+  "emails": [
+    {
+      "id": "msg_001",
+      "thread_id": "thread_001",
+      "sender": {"name": "Alex Chen", "email": "alex@stripe.com"},
+      "recipients": [{"email": "you@example.com"}],
+      "subject": "Quick question on the integration",
+      "body": "Hey,\n\nWanted to follow up on our conversation last week. We're trying to decide between webhook polling and the streaming API. Could you let me know which you'd recommend for our use case?\n\nThanks,\nAlex",
+      "received_at": "2026-04-25T14:30:00+00:00"
+    },
+    {
+      "id": "msg_002",
+      "thread_id": "thread_002",
+      "sender": {"name": "TechCrunch Daily", "email": "newsletter@techcrunch.com"},
+      "recipients": [{"email": "you@example.com"}],
+      "subject": "Today's top startup news",
+      "body": "Here's what's happening today. Top stories: Y Combinator announces W26 batch, OpenAI raises $40B, and a deep-dive on dev-tools market sizing.",
+      "received_at": "2026-04-26T06:00:00+00:00"
+    },
+    {
+      "id": "msg_003",
+      "thread_id": "thread_003",
+      "sender": {"name": "Priya Patel", "email": "priya@anthropic.com"},
+      "recipients": [{"email": "you@example.com"}],
+      "subject": "Are you available next Tuesday?",
+      "body": "Hi! Saw your post on Twitter and would love to chat about your work on agent infrastructure. Are you available for a 30-minute call next Tuesday afternoon?\n\nBest,\nPriya",
+      "received_at": "2026-04-25T22:15:00+00:00"
+    },
+    {
+      "id": "msg_004",
+      "thread_id": "thread_004",
+      "sender": {"name": "AWS Marketing", "email": "no-reply@aws.com"},
+      "recipients": [{"email": "you@example.com"}],
+      "subject": "New EC2 instance types now available",
+      "body": "We're excited to announce new M7i instances with up to 15% better price/performance. Click here to learn more about the new generation.",
+      "received_at": "2026-04-24T10:00:00+00:00"
+    },
+    {
+      "id": "msg_005",
+      "thread_id": "thread_005",
+      "sender": {"name": "Jordan Liu", "email": "jordan@sequoia.com"},
+      "recipients": [{"email": "you@example.com"}],
+      "subject": "Re: Following up on your seed round",
+      "body": "Thanks for sending the deck. One question before we move to a partner meeting: what's your churn rate look like for the cohort that signed up in Q4? Please send when you have a chance.\n\nJordan",
+      "received_at": "2026-04-25T18:45:00+00:00"
+    },
+    {
+      "id": "msg_006",
+      "thread_id": "thread_006",
+      "sender": {"name": "Stripe Receipts", "email": "receipts@stripe.com"},
+      "recipients": [{"email": "you@example.com"}],
+      "subject": "Receipt from Stripe — $99.00",
+      "body": "Thank you for your payment. Receipt number INV-2026-04-001. This is a transactional message, no reply needed.",
+      "received_at": "2026-04-23T12:00:00+00:00"
+    }
+  ],
+  "threads": [
+    {"id": "thread_001", "message_ids": ["msg_001"]},
+    {"id": "thread_002", "message_ids": ["msg_002"]},
+    {"id": "thread_003", "message_ids": ["msg_003"]},
+    {"id": "thread_004", "message_ids": ["msg_004"]},
+    {"id": "thread_005", "message_ids": ["msg_005"]},
+    {"id": "thread_006", "message_ids": ["msg_006"]}
+  ]
+}

@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gmail-autopilot"
+version = "0.1.0"
+description = "Gmail workflow runner that produces action briefs and Gmail drafts (never sends)."
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.6",
+    "python-dotenv>=1.0",
+]
+
+# Optional integrations: only installed with `uv sync --extra <name>`
+[project.optional-dependencies]
+anthropic = ["anthropic>=0.40"]
+google = [
+    "google-api-python-client>=2.130",
+    "google-auth-oauthlib>=1.2",
+]
+
+# Dev tooling (PEP 735). Installed by default with `uv sync`.
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+
+[project.scripts]
+gmail-autopilot = "gmail_autopilot.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["gmail_autopilot*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+# ---- ruff ----
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W",   # pycodestyle + pyflakes
+    "I",             # isort
+    "B",             # bugbear
+    "UP",            # pyupgrade
+    "RUF",           # ruff-specific
+]
+ignore = [
+    "E501",   # line length is handled by the formatter
+    "E731",   # workflow steps use lambdas as input_builders by design
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E402"]   # tests set BRACE_RETRY_NO_SLEEP before importing
+
+[tool.ruff.format]
+quote-style = "double"
