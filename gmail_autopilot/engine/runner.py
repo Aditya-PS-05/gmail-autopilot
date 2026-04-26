@@ -99,7 +99,28 @@ class WorkflowRunner:
         try:
             seed_inp = self.seed_step.input_builder({"limit": limit})
             seed_out = self._run_tool(self.seed_step, seed_inp, ctx, email_run_id=None)
-            emails: list[EmailSummary] = seed_out.emails
+            # Deduplicate by thread_id — Gmail returns individual messages so the
+            # same thread can appear multiple times. Keep the first (most recent).
+            seen: set[str] = set()
+            emails: list[EmailSummary] = []
+            for _e in seed_out.emails:
+                if _e.thread_id not in seen:
+                    seen.add(_e.thread_id)
+                    emails.append(_e)
+
+            # Skip threads that already have a draft from a previous run so
+            # reruns only process genuinely new threads.
+            drafted = self.repo.drafted_thread_ids(self.workflow_name)
+            already_drafted_count = sum(1 for e in emails if e.thread_id in drafted)
+            emails = [e for e in emails if e.thread_id not in drafted]
+            if already_drafted_count:
+                log.info(
+                    "skipping_already_drafted",
+                    extra={
+                        "count": already_drafted_count,
+                        "workflow_run_id": run_id,
+                    },
+                )
         except AuthError:
             run.status = "auth_failed"
             run.finished_at = datetime.now(UTC)
@@ -140,7 +161,7 @@ class WorkflowRunner:
         run.finished_at = datetime.now(UTC)
         run.duration_ms = int((time.monotonic() - t_start) * 1000)
         run.status = "completed_with_failures" if any_failed else "completed"
-        run.summary = self._build_summary(emails, run.action_briefs)
+        run.summary = self._build_summary(emails, run.action_briefs, already_drafted_count)
         self.repo.finish_run(run)
         log.info(
             "workflow_finished",
@@ -244,7 +265,7 @@ class WorkflowRunner:
 
         except WorkflowError as e:
             brief.status = "failed"
-            brief.error = f"{type(e).__name__}: {e}"
+            brief.error = f"{type(e).__name__}: {str(e)[:200]}"
             self.repo.finish_email_run(email_run_id, brief)
             log.error(
                 "email_failed: %s",
@@ -361,9 +382,11 @@ class WorkflowRunner:
     def _build_summary(
         emails: list[EmailSummary],
         briefs: list[EmailActionBrief],
+        already_drafted: int = 0,
     ) -> RunSummary:
         return RunSummary(
             fetched=len(emails),
+            already_drafted=already_drafted,
             needs_reply=sum(
                 1 for b in briefs if b.status in ("replied_draft_created", "replied_dry_run")
             ),

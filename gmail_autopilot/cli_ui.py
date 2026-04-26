@@ -97,6 +97,8 @@ class CliUI:
         if s:
             table.add_row("─" * 18, "")
             table.add_row("fetched", str(s.fetched))
+            if s.already_drafted:
+                table.add_row("already drafted", f"[dim]{s.already_drafted} skipped[/]")
             table.add_row("needs reply", str(s.needs_reply))
             table.add_row("skipped (no reply)", str(s.skipped_no_reply))
             table.add_row("drafts generated", str(s.drafts_generated))

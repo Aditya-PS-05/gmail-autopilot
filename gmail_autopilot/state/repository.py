@@ -19,6 +19,7 @@ class Repository:
     def __init__(self, db_path: Path):
         self._conn = sqlite3.connect(str(db_path), isolation_level=None)  # autocommit
         self._conn.row_factory = sqlite3.Row
+        self._conn.execute("PRAGMA journal_mode=WAL")
         self._conn.executescript(_SCHEMA)
 
     def close(self) -> None:
@@ -125,6 +126,14 @@ class Repository:
         )
 
     # ---- idempotency ----
+
+    def drafted_thread_ids(self, workflow: str) -> set[str]:
+        """Return all thread_ids that already have a draft for this workflow."""
+        rows = self._conn.execute(
+            "SELECT DISTINCT thread_id FROM idempotency_keys WHERE workflow=?",
+            (workflow,),
+        ).fetchall()
+        return {row["thread_id"] for row in rows}
 
     def lookup_idempotency(self, key: str) -> str | None:
         row = self._conn.execute(

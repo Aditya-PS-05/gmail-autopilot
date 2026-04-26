@@ -117,6 +117,7 @@ class EmailActionBrief(BaseModel):
 
 class RunSummary(BaseModel):
     fetched: int
+    already_drafted: int = 0
     needs_reply: int
     skipped_no_reply: int
     drafts_generated: int

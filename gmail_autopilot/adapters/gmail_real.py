@@ -45,7 +45,10 @@ class RealGmailClient:
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(str(credentials_path), _SCOPES)
                 creds = flow.run_local_server(port=0)
-            token_path.write_text(creds.to_json())
+            import os as _os
+            fd = _os.open(str(token_path), _os.O_WRONLY | _os.O_CREAT | _os.O_TRUNC, 0o600)
+            with _os.fdopen(fd, "w") as _f:
+                _f.write(creds.to_json())
         self._service = build("gmail", "v1", credentials=creds)
 
     @staticmethod

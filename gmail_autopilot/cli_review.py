@@ -116,7 +116,7 @@ def _edit_one(
         console.print(f"[red]✗ Update failed: {e}[/]")
         return False
     except Exception as e:
-        console.print(f"[red]✗ Unexpected error: {e}[/]")
+        console.print(f"[red]✗ Unexpected error: {type(e).__name__}[/]")
         return False
 
     msg.body = edited  # keep in-memory state in sync for follow-up edits
