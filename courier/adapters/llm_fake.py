@@ -31,6 +31,18 @@ _NEEDS_REPLY_KEYWORDS = (
     "how do",
 )
 
+_HIGH_URGENCY_KEYWORDS = (
+    "asap",
+    "urgent",
+    "offer",
+    "interview",
+    "deadline",
+    "today",
+    "tomorrow",
+    "action required",
+    "blocked",
+)
+
 
 class FakeLLMClient:
     def __init__(self) -> None:
@@ -75,12 +87,14 @@ class FakeLLMClient:
             if needs_reply
             else "No question detected; appears informational or transactional."
         )
+        urgency = 0.85 if any(kw in text for kw in _HIGH_URGENCY_KEYWORDS) else 0.3
         return schema.model_validate(
             {
                 "email_id": email_id,
                 "needs_reply": needs_reply,
                 "confidence": 0.78 if needs_reply else 0.62,
                 "why_now": why,
+                "urgency": urgency,
             }
         )
 

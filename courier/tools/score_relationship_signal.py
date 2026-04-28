@@ -16,9 +16,13 @@ class ScoreOutput(BaseModel):
 
 
 _SYSTEM = (
-    "You score whether an inbound email needs a reply from the recipient. "
-    "Return JSON with: email_id (string), needs_reply (bool), confidence (0..1), "
-    "and why_now (one short sentence explaining the relationship signal)."
+    "You score whether an inbound email needs a reply from the recipient, "
+    "and how urgent/important it is. Return JSON with: email_id (string), "
+    "needs_reply (bool), confidence (0..1, how sure you are about needs_reply), "
+    "why_now (one short sentence explaining the relationship signal), "
+    "and urgency (0..1, how time-sensitive or high-stakes this email is — "
+    "offer letters, interview confirmations, urgent client requests are 0.8+; "
+    "newsletters, receipts, casual chat are 0.1-0.3)."
 )
 
 

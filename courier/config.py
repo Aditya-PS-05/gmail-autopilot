@@ -22,6 +22,8 @@ class Config:
     xai_api_key: str | None = None
     google_credentials_path: Path | None = None
     log_level: str = "INFO"
+    vip_emails: tuple[str, ...] = ()
+    priority_keywords: tuple[str, ...] = ()
 
     @classmethod
     def from_env(cls, **overrides) -> Config:
@@ -31,6 +33,11 @@ class Config:
         gp = os.environ.get("GOOGLE_CREDENTIALS_PATH")
         _bundled = Path(__file__).parent / "credentials.json"
         resolved_creds = Path(gp) if gp else (_bundled if _bundled.exists() else None)
+
+        def _csv(name: str) -> tuple[str, ...]:
+            raw = os.environ.get(name, "")
+            return tuple(s.strip().lower() for s in raw.split(",") if s.strip())
+
         defaults = dict(
             mode=Mode(os.environ.get("BRACE_MODE", "dry-run")),
             limit=int(os.environ.get("BRACE_LIMIT", "10")),
@@ -43,6 +50,8 @@ class Config:
             xai_api_key=os.environ.get("XAI_API_KEY") or None,
             google_credentials_path=resolved_creds,
             log_level=os.environ.get("BRACE_LOG_LEVEL", "INFO"),
+            vip_emails=_csv("COURIER_VIPS"),
+            priority_keywords=_csv("COURIER_KEYWORDS"),
         )
         defaults.update(overrides)
         return cls(**defaults)

@@ -31,6 +31,7 @@ from ..models import (
     StepResult,
     StepStatus,
 )
+from ..priority import compute_priority
 from ..reliability.retry import call_with_retry
 from ..state.repository import Repository
 from ..tools.base import ToolContext
@@ -52,6 +53,8 @@ class WorkflowRunner:
         memory: MemoryProvider,
         repo: Repository,
         mode: Mode,
+        vip_emails: tuple[str, ...] = (),
+        priority_keywords: tuple[str, ...] = (),
     ):
         self.workflow_name = workflow_name
         self.seed_step = seed_step
@@ -61,6 +64,8 @@ class WorkflowRunner:
         self.memory = memory
         self.repo = repo
         self.mode = mode
+        self.vip_emails: set[str] = {v.lower() for v in vip_emails}
+        self.priority_keywords: set[str] = {k.lower() for k in priority_keywords}
 
     # ---- public ----
 
@@ -145,6 +150,11 @@ class WorkflowRunner:
             notify(RunFinished(run=run))
             return run
 
+        # Pre-sort by preliminary priority so the live feed surfaces VIPs and
+        # keyword/memory matches first. Urgency from the LLM isn't known yet,
+        # so it's omitted here — the final brief priority still includes it.
+        emails = self._presort_by_priority(emails)
+
         notify(EmailsFetched(emails=emails))
 
         # 2. Fan out (per-email isolation)
@@ -158,6 +168,13 @@ class WorkflowRunner:
             notify(EmailCompleted(brief=brief, index=i, total=total))
 
         # 3. Summarize
+        # Sort briefs by priority (highest first) so the summary surfaces what
+        # matters most. Fall back to 0 for briefs without a priority (e.g.
+        # failures before scoring completed).
+        run.action_briefs.sort(
+            key=lambda b: b.priority.score if b.priority else 0.0,
+            reverse=True,
+        )
         run.finished_at = datetime.now(UTC)
         run.duration_ms = int((time.monotonic() - t_start) * 1000)
         run.status = "completed_with_failures" if any_failed else "completed"
@@ -355,15 +372,48 @@ class WorkflowRunner:
         )
         return output
 
-    @staticmethod
-    def _build_brief(brief: EmailActionBrief, state: dict[str, Any]) -> EmailActionBrief:
+    def _presort_by_priority(self, emails: list[EmailSummary]) -> list[EmailSummary]:
+        """Order emails by preliminary priority (VIP + keyword + memory).
+        Urgency is unknown until the LLM scores each email, so it's excluded
+        here — the per-brief final priority still includes urgency."""
+        if not emails:
+            return emails
+
+        def score(e: EmailSummary) -> float:
+            try:
+                mem = self.memory.lookup(e.sender.email)
+            except Exception:
+                mem = None
+            return compute_priority(
+                e,
+                signal=None,
+                memory=mem,
+                vip_emails=self.vip_emails,
+                keywords=self.priority_keywords,
+            ).score
+
+        return sorted(emails, key=score, reverse=True)
+
+    def _build_brief(self, brief: EmailActionBrief, state: dict[str, Any]) -> EmailActionBrief:
         signal_out = state.get("signal_out")
-        if signal_out is not None:
-            brief.signal_score = signal_out.signal.confidence
-            brief.why_now = signal_out.signal.why_now
-            if not signal_out.signal.needs_reply:
-                brief.status = "skipped_no_reply_needed"
-                return brief
+        signal = signal_out.signal if signal_out is not None else None
+        if signal is not None:
+            brief.signal_score = signal.confidence
+            brief.why_now = signal.why_now
+
+        # Compute priority once we have whatever signals are available — even
+        # for no-reply emails, ranking still matters in the summary view.
+        brief.priority = compute_priority(
+            state["email"],
+            signal=signal,
+            memory=state.get("memory"),
+            vip_emails=self.vip_emails,
+            keywords=self.priority_keywords,
+        )
+
+        if signal is not None and not signal.needs_reply:
+            brief.status = "skipped_no_reply_needed"
+            return brief
 
         draft_out = state.get("draft_out")
         if draft_out is not None:

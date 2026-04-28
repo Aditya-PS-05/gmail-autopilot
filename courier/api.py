@@ -143,6 +143,8 @@ def run_autopilot(
             memory=memory,
             repo=repo,
             mode=config.mode,
+            vip_emails=config.vip_emails,
+            priority_keywords=config.priority_keywords,
         )
         return runner.run(limit=config.limit, on_progress=on_progress)
     finally:

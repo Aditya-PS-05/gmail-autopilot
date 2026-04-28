@@ -57,6 +57,17 @@ class RelationshipSignal(BaseModel):
     needs_reply: bool
     confidence: float = Field(ge=0.0, le=1.0)
     why_now: str
+    urgency: float = Field(default=0.0, ge=0.0, le=1.0)
+
+
+class Priority(BaseModel):
+    """Composite priority score for an email. Higher score = surface first."""
+
+    score: float
+    vip_match: bool = False
+    keyword_match: bool = False
+    memory_signal: float = 0.0
+    llm_urgency: float = 0.0
 
 
 class DraftContent(BaseModel):
@@ -112,6 +123,7 @@ class EmailActionBrief(BaseModel):
     suggested_message: DraftContent | None = None
     draft_id: str | None = None
     memory_used: bool = False
+    priority: Priority | None = None
     error: str | None = None
 
 
